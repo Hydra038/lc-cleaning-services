@@ -80,6 +80,9 @@ function BookingContent() {
     if (savedStep) {
       setCurrentStep(parseInt(savedStep))
     }
+    
+    // Scroll to top on page load
+    window.scrollTo({ top: 0, behavior: 'smooth' })
   }, [])
 
   // Save form data to localStorage whenever it changes
@@ -196,11 +199,15 @@ function BookingContent() {
   const nextStep = () => {
     if (validateStep(currentStep)) {
       setCurrentStep(prev => prev + 1)
+      // Scroll to top of page smoothly
+      window.scrollTo({ top: 0, behavior: 'smooth' })
     }
   }
 
   const prevStep = () => {
     setCurrentStep(prev => prev - 1)
+    // Scroll to top of page smoothly
+    window.scrollTo({ top: 0, behavior: 'smooth' })
   }
 
   // Generate unique booking reference
