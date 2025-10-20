@@ -15,6 +15,7 @@ import {
   Star,
   LogOut
 } from 'lucide-react'
+import { ButtonSpinner, LoadingOverlay } from '../components/LoadingSpinner'
 
 interface DashboardStats {
   totalBookings: number
@@ -42,6 +43,7 @@ export default function AdminPage() {
   const [messages, setMessages] = useState<ContactMessage[]>([])
   const [paymentMethods, setPaymentMethods] = useState<PaymentMethod[]>([])
   const [loading, setLoading] = useState(true)
+  const [updatingId, setUpdatingId] = useState<string | null>(null)
   const [editingPayment, setEditingPayment] = useState<PaymentMethod | null>(null)
   const [paymentForm, setPaymentForm] = useState({
     name: '',
@@ -160,6 +162,7 @@ export default function AdminPage() {
   }
 
   const updateBookingStatus = async (bookingId: string, newStatus: string) => {
+    setUpdatingId(bookingId)
     try {
       const { error } = await supabase
         .from('bookings')
@@ -172,10 +175,13 @@ export default function AdminPage() {
       }
     } catch (error) {
       console.error('Error updating booking:', error)
+    } finally {
+      setUpdatingId(null)
     }
   }
 
   const updatePaymentStatus = async (bookingId: string, newPaymentStatus: string) => {
+    setUpdatingId(bookingId)
     try {
       const { error } = await supabase
         .from('bookings')
@@ -189,6 +195,8 @@ export default function AdminPage() {
       }
     } catch (error) {
       console.error('Error updating payment status:', error)
+    } finally {
+      setUpdatingId(null)
     }
   }
 
@@ -344,14 +352,7 @@ export default function AdminPage() {
   }
 
   if (loading) {
-    return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-teal-600 mx-auto mb-4"></div>
-          <p className="text-gray-600">Loading admin dashboard...</p>
-        </div>
-      </div>
-    )
+    return <LoadingOverlay message="Loading admin dashboard..." />
   }
 
   return (
@@ -503,7 +504,8 @@ export default function AdminPage() {
                     <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Service</th>
                     <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Date & Time</th>
                     <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Location</th>
-                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Payment</th>
+                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Payment Details</th>
+                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Deposit Status</th>
                     <th className="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
                     <th className="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
                   </tr>
@@ -539,23 +541,91 @@ export default function AdminPage() {
                         </div>
                       </td>
                       <td className="px-4 py-4 whitespace-nowrap">
-                        <div className="min-w-[140px]">
+                        <div className="min-w-[180px]">
                           <p className="text-sm font-medium text-gray-900 mb-2">{booking.payment_method === 'paypal' ? 'PayPal' : 'Bank Transfer'}</p>
-                          <select
-                            value={booking.payment_status}
-                            onChange={(e) => updatePaymentStatus(booking.id, e.target.value)}
-                            className={`w-full px-2 py-1 text-xs font-medium rounded border-2 cursor-pointer transition-colors ${
-                              booking.payment_status === 'paid' ? 'bg-green-50 border-green-200 text-green-800' :
-                              booking.payment_status === 'pending' ? 'bg-yellow-50 border-yellow-200 text-yellow-800' :
-                              booking.payment_status === 'failed' ? 'bg-red-50 border-red-200 text-red-800' :
-                              'bg-gray-50 border-gray-200 text-gray-800'
-                            }`}
-                          >
-                            <option value="pending">⏳ Pending</option>
-                            <option value="paid">✓ Paid</option>
-                            <option value="failed">✗ Failed</option>
-                            <option value="refunded">↩ Refunded</option>
-                          </select>
+                          <div className="space-y-1">
+                            <p className="text-xs text-gray-600">
+                              Total: <span className="font-semibold text-gray-900">£{Number(booking.amount || 0).toFixed(2)}</span>
+                            </p>
+                            {booking.deposit_required && (
+                              <>
+                                <p className="text-xs text-teal-600">
+                                  Deposit: <span className="font-semibold">£{Number(booking.deposit_amount || 0).toFixed(2)}</span>
+                                </p>
+                                <p className="text-xs text-orange-600">
+                                  Balance: <span className="font-semibold">£{Number(booking.balance_remaining || 0).toFixed(2)}</span>
+                                </p>
+                              </>
+                            )}
+                            {!booking.deposit_required && (
+                              <p className="text-xs text-blue-600 font-medium">
+                                Full Payment Required
+                              </p>
+                            )}
+                          </div>
+                        </div>
+                      </td>
+                      <td className="px-4 py-4 whitespace-nowrap">
+                        <div className="min-w-[160px] space-y-2">
+                          {booking.deposit_required ? (
+                            <>
+                              <div>
+                                <label className="block text-xs font-medium text-gray-600 mb-1">Deposit Status</label>
+                                <select
+                                  value={booking.deposit_paid ? 'paid' : 'pending'}
+                                  onChange={(e) => {
+                                    const isPaid = e.target.value === 'paid'
+                                    supabase
+                                      .from('bookings')
+                                      .update({ deposit_paid: isPaid })
+                                      .eq('id', booking.id)
+                                      .then(() => fetchBookings())
+                                  }}
+                                  className={`w-full px-2 py-1 text-xs font-medium rounded border-2 cursor-pointer ${
+                                    booking.deposit_paid 
+                                      ? 'bg-green-50 border-green-200 text-green-800' 
+                                      : 'bg-yellow-50 border-yellow-200 text-yellow-800'
+                                  }`}
+                                >
+                                  <option value="pending">⏳ Deposit Pending</option>
+                                  <option value="paid">✓ Deposit Paid</option>
+                                </select>
+                              </div>
+                              <div>
+                                <label className="block text-xs font-medium text-gray-600 mb-1">Balance Status</label>
+                                <select
+                                  value={booking.payment_status}
+                                  onChange={(e) => updatePaymentStatus(booking.id, e.target.value)}
+                                  className={`w-full px-2 py-1 text-xs font-medium rounded border-2 cursor-pointer ${
+                                    booking.payment_status === 'paid' ? 'bg-green-50 border-green-200 text-green-800' :
+                                    booking.payment_status === 'pending' ? 'bg-orange-50 border-orange-200 text-orange-800' :
+                                    'bg-gray-50 border-gray-200 text-gray-800'
+                                  }`}
+                                >
+                                  <option value="pending">⏳ Balance Due</option>
+                                  <option value="paid">✓ Fully Paid</option>
+                                  <option value="failed">✗ Failed</option>
+                                </select>
+                              </div>
+                            </>
+                          ) : (
+                            <div>
+                              <label className="block text-xs font-medium text-gray-600 mb-1">Payment Status</label>
+                              <select
+                                value={booking.payment_status}
+                                onChange={(e) => updatePaymentStatus(booking.id, e.target.value)}
+                                className={`w-full px-2 py-1 text-xs font-medium rounded border-2 cursor-pointer ${
+                                  booking.payment_status === 'paid' ? 'bg-green-50 border-green-200 text-green-800' :
+                                  booking.payment_status === 'pending' ? 'bg-yellow-50 border-yellow-200 text-yellow-800' :
+                                  'bg-gray-50 border-gray-200 text-gray-800'
+                                }`}
+                              >
+                                <option value="pending">⏳ Pending</option>
+                                <option value="paid">✓ Paid</option>
+                                <option value="failed">✗ Failed</option>
+                              </select>
+                            </div>
+                          )}
                         </div>
                       </td>
                       <td className="px-4 py-4 whitespace-nowrap text-center">
@@ -568,27 +638,30 @@ export default function AdminPage() {
                           {booking.booking_status === 'pending' && (
                             <button
                               onClick={() => updateBookingStatus(booking.id, 'confirmed')}
-                              className="p-2 text-green-600 hover:bg-green-50 rounded-lg transition-colors"
+                              disabled={updatingId === booking.id}
+                              className="p-2 text-green-600 hover:bg-green-50 rounded-lg transition-colors disabled:opacity-50"
                               title="Confirm Booking"
                             >
-                              <Check size={18} />
+                              {updatingId === booking.id ? <ButtonSpinner /> : <Check size={18} />}
                             </button>
                           )}
                           {booking.booking_status === 'confirmed' && (
                             <button
                               onClick={() => updateBookingStatus(booking.id, 'completed')}
-                              className="p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
+                              disabled={updatingId === booking.id}
+                              className="p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors disabled:opacity-50"
                               title="Mark as Completed"
                             >
-                              <Star size={18} />
+                              {updatingId === booking.id ? <ButtonSpinner /> : <Star size={18} />}
                             </button>
                           )}
                           <button
                             onClick={() => updateBookingStatus(booking.id, 'cancelled')}
-                            className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+                            disabled={updatingId === booking.id}
+                            className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors disabled:opacity-50"
                             title="Cancel Booking"
                           >
-                            <X size={18} />
+                            {updatingId === booking.id ? <ButtonSpinner /> : <X size={18} />}
                           </button>
                         </div>
                       </td>

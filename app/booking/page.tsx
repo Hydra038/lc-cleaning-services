@@ -8,6 +8,7 @@ import Footer from '@/components/Footer'
 import { supabase } from '@/lib/supabase'
 import type { Service, PaymentMethod } from '@/lib/supabase'
 import { Calendar, Clock, MapPin, Phone, Mail, User, CreditCard, ArrowRight, ArrowLeft, CheckCircle } from 'lucide-react'
+import { ButtonSpinner, LoadingOverlay } from '../components/LoadingSpinner'
 
 interface FormData {
   name: string
@@ -172,6 +173,16 @@ function BookingContent() {
 
   const [bookingReference, setBookingReference] = useState<string>('')
 
+  // Calculate deposit amounts based on your rule:
+  // £50+ = 50% deposit, under £50 = full payment
+  const calculatePaymentAmounts = (totalAmount: number) => {
+    const requiresDeposit = totalAmount >= 50
+    const depositAmount = requiresDeposit ? totalAmount * 0.5 : totalAmount
+    const balanceAmount = requiresDeposit ? totalAmount * 0.5 : 0
+    
+    return { requiresDeposit, depositAmount, balanceAmount }
+  }
+
   const submitBooking = async () => {
     if (!validateStep(3)) return
     
@@ -179,6 +190,8 @@ function BookingContent() {
     
     try {
       const reference = generateBookingReference()
+      const totalAmount = selectedService?.price || 0
+      const { requiresDeposit, depositAmount, balanceAmount } = calculatePaymentAmounts(totalAmount)
       
       const { data, error } = await supabase
         .from('bookings')
@@ -196,7 +209,12 @@ function BookingContent() {
           payment_status: 'pending',
           booking_status: 'pending',
           payment_reference: reference,
-          amount: selectedService?.price || 0
+          amount: totalAmount,
+          deposit_amount: depositAmount,
+          balance_amount: balanceAmount,
+          requires_deposit: requiresDeposit,
+          deposit_paid: false,
+          balance_paid: false
         }])
         .select()
       
@@ -303,6 +321,53 @@ function BookingContent() {
                       <span className="text-gray-600">Payment:</span>
                       <span className="font-medium">{paymentMethods.find(p => p.method_type === formData.payment_method)?.name}</span>
                     </div>
+                    
+                    {/* Payment Breakdown */}
+                    {selectedService && (() => {
+                      const totalAmount = selectedService.price
+                      const { requiresDeposit, depositAmount, balanceAmount } = calculatePaymentAmounts(totalAmount)
+                      
+                      return (
+                        <>
+                          <div className="border-t pt-2 mt-2">
+                            <div className="flex justify-between">
+                              <span className="text-gray-600">Total Service Cost:</span>
+                              <span className="font-bold text-lg">£{totalAmount.toFixed(2)}</span>
+                            </div>
+                          </div>
+                          {requiresDeposit ? (
+                            <>
+                              <div className="bg-green-50 border border-green-200 rounded p-3 mt-2">
+                                <div className="flex justify-between mb-1">
+                                  <span className="text-green-700 font-medium">Deposit Required (50%):</span>
+                                  <span className="font-bold text-green-700">£{depositAmount.toFixed(2)}</span>
+                                </div>
+                                <div className="flex justify-between">
+                                  <span className="text-gray-600 text-xs">Balance Due on Service Day:</span>
+                                  <span className="font-medium text-gray-700">£{balanceAmount.toFixed(2)}</span>
+                                </div>
+                              </div>
+                              <p className="text-xs text-gray-500 italic mt-2">
+                                💡 Services £50+ require 50% deposit. Pay remaining balance on service day.
+                              </p>
+                            </>
+                          ) : (
+                            <>
+                              <div className="bg-blue-50 border border-blue-200 rounded p-3 mt-2">
+                                <div className="flex justify-between">
+                                  <span className="text-blue-700 font-medium">Full Payment Required:</span>
+                                  <span className="font-bold text-blue-700">£{depositAmount.toFixed(2)}</span>
+                                </div>
+                              </div>
+                              <p className="text-xs text-gray-500 italic mt-2">
+                                💡 Services under £50 are paid in full upfront.
+                              </p>
+                            </>
+                          )}
+                        </>
+                      )
+                    })()}
+                    
                     <div className="flex justify-between border-t pt-2 mt-2">
                       <span className="text-gray-600">Status:</span>
                       <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800">
@@ -744,10 +809,47 @@ function BookingContent() {
                           <span className="text-gray-600">Address:</span>
                           <span className="font-medium text-right max-w-[60%]">{formData.address}, {formData.city} {formData.postcode}</span>
                         </div>
-                        <div className="border-t pt-2 sm:pt-3 flex justify-between text-base sm:text-lg font-semibold">
-                          <span>Estimated Price:</span>
-                          <span className="text-teal-600">From £{selectedService.price}</span>
-                        </div>
+                        
+                        {/* Payment Breakdown */}
+                        {(() => {
+                          const totalAmount = selectedService.price
+                          const { requiresDeposit, depositAmount, balanceAmount } = calculatePaymentAmounts(totalAmount)
+                          
+                          return (
+                            <>
+                              <div className="border-t pt-2 sm:pt-3 flex justify-between text-base sm:text-lg font-semibold">
+                                <span>Total Service Cost:</span>
+                                <span className="text-gray-900">£{totalAmount.toFixed(2)}</span>
+                              </div>
+                              
+                              {requiresDeposit ? (
+                                <div className="bg-gradient-to-r from-green-50 to-emerald-50 border-2 border-green-200 rounded-lg p-3 sm:p-4 mt-2">
+                                  <div className="flex justify-between items-center mb-2">
+                                    <span className="text-green-800 font-bold text-sm sm:text-base">💰 Deposit Required (50%):</span>
+                                    <span className="font-bold text-green-700 text-lg sm:text-xl">£{depositAmount.toFixed(2)}</span>
+                                  </div>
+                                  <div className="flex justify-between items-center text-xs sm:text-sm">
+                                    <span className="text-gray-700">Remaining Balance (Pay on service day):</span>
+                                    <span className="font-semibold text-gray-800">£{balanceAmount.toFixed(2)}</span>
+                                  </div>
+                                  <p className="text-xs text-gray-600 mt-2 pt-2 border-t border-green-200">
+                                    ℹ️ Services £50+ require 50% deposit upfront. Pay the remaining balance on the day of service.
+                                  </p>
+                                </div>
+                              ) : (
+                                <div className="bg-gradient-to-r from-blue-50 to-sky-50 border-2 border-blue-200 rounded-lg p-3 sm:p-4 mt-2">
+                                  <div className="flex justify-between items-center mb-2">
+                                    <span className="text-blue-800 font-bold text-sm sm:text-base">💳 Full Payment Required:</span>
+                                    <span className="font-bold text-blue-700 text-lg sm:text-xl">£{depositAmount.toFixed(2)}</span>
+                                  </div>
+                                  <p className="text-xs text-gray-600 mt-2 pt-2 border-t border-blue-200">
+                                    ℹ️ Services under £50 are paid in full upfront.
+                                  </p>
+                                </div>
+                              )}
+                            </>
+                          )
+                        })()}
                       </div>
                     </div>
                   )}
@@ -760,10 +862,19 @@ function BookingContent() {
                     <button 
                       onClick={submitBooking} 
                       disabled={loading}
-                      className="btn-primary disabled:opacity-50 w-full sm:w-auto"
+                      className="btn-primary disabled:opacity-50 w-full sm:w-auto flex items-center justify-center gap-2"
                     >
-                      {loading ? 'Submitting...' : 'Confirm Booking'}
-                      <ArrowRight size={18} />
+                      {loading ? (
+                        <>
+                          <ButtonSpinner />
+                          <span>Submitting...</span>
+                        </>
+                      ) : (
+                        <>
+                          <span>Confirm Booking</span>
+                          <ArrowRight size={18} />
+                        </>
+                      )}
                     </button>
                   </div>
                 </div>

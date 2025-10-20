@@ -6,6 +6,7 @@ import Navigation from '@/components/Navigation'
 import Footer from '@/components/Footer'
 import { supabase } from '@/lib/supabase'
 import { Phone, Mail, MapPin, Clock, Send, CheckCircle, MessageCircle, Facebook } from 'lucide-react'
+import { ButtonSpinner } from '../components/LoadingSpinner'
 
 interface ContactForm {
   name: string
@@ -80,18 +81,33 @@ export default function ContactPage() {
     try {
       const reference = generateMessageReference()
       
-      const { error } = await supabase
+      // Format the message with all details
+      const fullMessage = `Inquiry Type: ${inquiryTypes.find(t => t.value === formData.inquiry_type)?.label}\nSubject: ${formData.subject}\n\n${formData.message}`
+      
+      const { data, error } = await supabase
         .from('contact_messages')
         .insert([{
           name: formData.name,
           email: formData.email,
           phone: formData.phone || null,
-          message: `Subject: ${formData.subject}\n\n${formData.message}`,
+          message: fullMessage,
           message_reference: reference,
           is_read: false
         }])
+        .select()
       
-      if (error) throw error
+      if (error) {
+        console.error('Supabase error details:', {
+          message: error.message,
+          details: error.details,
+          hint: error.hint,
+          code: error.code
+        })
+        alert(`Error: ${error.message || 'Failed to send message. Please check if the database is set up correctly.'}`)
+        throw error
+      }
+      
+      console.log('Message sent successfully:', data)
       
       setMessageReference(reference)
       setSubmitted(true)
@@ -371,10 +387,19 @@ export default function ContactPage() {
                 <button
                   type="submit"
                   disabled={loading}
-                  className="btn-primary w-full disabled:opacity-50"
+                  className="btn-primary w-full disabled:opacity-50 flex items-center justify-center gap-2"
                 >
-                  {loading ? 'Sending...' : 'Send Message'}
-                  <Send size={18} />
+                  {loading ? (
+                    <>
+                      <ButtonSpinner />
+                      <span>Sending...</span>
+                    </>
+                  ) : (
+                    <>
+                      <span>Send Message</span>
+                      <Send size={18} />
+                    </>
+                  )}
                 </button>
               </form>
             </div>

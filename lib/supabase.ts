@@ -55,6 +55,10 @@ export interface Booking {
   postcode: string
   special_instructions?: string
   amount: number
+  deposit_required: boolean
+  deposit_amount: number
+  balance_remaining: number
+  deposit_paid: boolean
   payment_method: string
   payment_status: string
   booking_status: string
