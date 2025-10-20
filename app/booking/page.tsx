@@ -62,6 +62,46 @@ function BookingContent() {
     payment_method: ''
   })
 
+  // Load saved form data from localStorage on mount
+  useEffect(() => {
+    const savedData = localStorage.getItem('bookingFormData')
+    const savedStep = localStorage.getItem('bookingStep')
+    
+    if (savedData) {
+      try {
+        const parsed = JSON.parse(savedData)
+        setFormData(parsed)
+        console.log('Restored booking form data from localStorage')
+      } catch (error) {
+        console.error('Error parsing saved form data:', error)
+      }
+    }
+    
+    if (savedStep) {
+      setCurrentStep(parseInt(savedStep))
+    }
+  }, [])
+
+  // Save form data to localStorage whenever it changes
+  useEffect(() => {
+    if (formData.name || formData.email || formData.service_id) {
+      localStorage.setItem('bookingFormData', JSON.stringify(formData))
+      console.log('Saved booking form data to localStorage')
+    }
+  }, [formData])
+
+  // Save current step to localStorage
+  useEffect(() => {
+    localStorage.setItem('bookingStep', currentStep.toString())
+  }, [currentStep])
+
+  // Clear saved data after successful submission
+  const clearSavedData = () => {
+    localStorage.removeItem('bookingFormData')
+    localStorage.removeItem('bookingStep')
+    console.log('Cleared saved booking data')
+  }
+
   useEffect(() => {
     fetchServices()
     fetchPaymentMethods()
@@ -226,6 +266,7 @@ function BookingContent() {
       if (data && data.length > 0) {
         setBookingReference(reference)
         setSubmitted(true)
+        clearSavedData() // Clear saved form data after successful submission
         
         // TODO: Send email confirmation (integrate with email service)
         // await sendConfirmationEmail(formData.email, reference, data[0])
@@ -439,6 +480,36 @@ function BookingContent() {
             </div>
 
             <div className="card p-4 sm:p-6 md:p-8">
+              {/* Progress Restored Notice */}
+              {(formData.name || formData.email || formData.service_id) && currentStep === 1 && (
+                <div className="mb-6 p-4 bg-blue-50 border-l-4 border-blue-500 rounded">
+                  <div className="flex items-start gap-3">
+                    <div className="flex-shrink-0">
+                      <svg className="w-5 h-5 text-blue-500 mt-0.5" fill="currentColor" viewBox="0 0 20 20">
+                        <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd" />
+                      </svg>
+                    </div>
+                    <div className="flex-1">
+                      <p className="text-sm text-blue-800 font-medium">Your progress has been saved!</p>
+                      <p className="text-xs text-blue-700 mt-1">
+                        Don't worry if you refresh the page - your booking details are saved automatically.
+                      </p>
+                    </div>
+                    <button
+                      onClick={() => {
+                        if (confirm('Are you sure you want to start over? This will clear all your saved data.')) {
+                          clearSavedData()
+                          window.location.reload()
+                        }
+                      }}
+                      className="text-xs text-blue-600 hover:text-blue-800 underline flex-shrink-0"
+                    >
+                      Start Over
+                    </button>
+                  </div>
+                </div>
+              )}
+              
               {/* Step 1: Service Selection */}
               {currentStep === 1 && (
                 <div>
