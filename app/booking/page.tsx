@@ -351,62 +351,62 @@ function BookingContent() {
           <div className="max-w-4xl mx-auto">
             {/* Progress Indicator */}
             <div className="mb-8">
-              <div className="flex items-center justify-center space-x-8">
+              <div className="flex items-center justify-center space-x-2 sm:space-x-4 md:space-x-8">
                 {[1, 2, 3].map((step) => (
                   <div key={step} className="flex items-center">
-                    <div className={`w-10 h-10 rounded-full flex items-center justify-center text-sm font-semibold ${
+                    <div className={`w-8 h-8 sm:w-10 sm:h-10 rounded-full flex items-center justify-center text-xs sm:text-sm font-semibold ${
                       currentStep >= step ? 'bg-teal-600 text-white' : 'bg-gray-200 text-gray-600'
                     }`}>
                       {step}
                     </div>
-                    <div className={`ml-3 text-sm font-medium ${
+                    <div className={`ml-1 sm:ml-3 text-xs sm:text-sm font-medium ${
                       currentStep >= step ? 'text-teal-600' : 'text-gray-500'
-                    }`}>
+                    } hidden sm:block`}>
                       {step === 1 && 'Service & Date'}
                       {step === 2 && 'Your Details'}
                       {step === 3 && 'Payment & Confirm'}
                     </div>
                     {step < 3 && (
-                      <ArrowRight className="ml-8 text-gray-300" size={20} />
+                      <ArrowRight className="ml-2 sm:ml-8 text-gray-300" size={16} />
                     )}
                   </div>
                 ))}
               </div>
             </div>
 
-            <div className="card p-8">
+            <div className="card p-4 sm:p-6 md:p-8">
               {/* Step 1: Service Selection */}
               {currentStep === 1 && (
                 <div>
-                  <h2 className="text-2xl font-bold text-gray-900 mb-6">
+                  <h2 className="text-xl sm:text-2xl font-bold text-gray-900 mb-4 sm:mb-6">
                     Select Service & Date
                   </h2>
                   
                   {/* Service Selection */}
-                  <div className="mb-6">
-                    <label className="block text-sm font-medium text-gray-700 mb-3">
+                  <div className="mb-4 sm:mb-6">
+                    <label className="block text-sm font-medium text-gray-700 mb-2 sm:mb-3">
                       Choose Your Service *
                     </label>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3 sm:gap-4">
                       {services.map((service) => (
                         <div
                           key={service.id}
                           onClick={() => handleInputChange('service_id', service.id)}
-                          className={`border-2 rounded-lg p-5 cursor-pointer transition-all hover:shadow-md ${
+                          className={`border-2 rounded-lg p-4 sm:p-5 cursor-pointer transition-all hover:shadow-md ${
                             formData.service_id === service.id
                               ? 'border-teal-500 bg-teal-50 shadow-md'
                               : 'border-gray-200 hover:border-teal-300'
                           }`}
                         >
                           <div className="flex items-start justify-between mb-2">
-                            <h3 className="font-bold text-gray-900 text-lg">{service.name}</h3>
+                            <h3 className="font-bold text-gray-900 text-base sm:text-lg">{service.name}</h3>
                             {formData.service_id === service.id && (
-                              <CheckCircle className="text-teal-500 flex-shrink-0" size={24} />
+                              <CheckCircle className="text-teal-500 flex-shrink-0" size={20} />
                             )}
                           </div>
-                          <p className="text-sm text-gray-600 mb-3 leading-relaxed">{service.short_description}</p>
+                          <p className="text-xs sm:text-sm text-gray-600 mb-2 sm:mb-3 leading-relaxed">{service.short_description}</p>
                           <div className="flex items-center justify-between">
-                            <p className="text-xl font-bold text-teal-600">From £{service.price}</p>
+                            <p className="text-lg sm:text-xl font-bold text-teal-600">From £{service.price}</p>
                             <span className="text-xs text-gray-500">per service</span>
                           </div>
                         </div>
@@ -452,15 +452,15 @@ function BookingContent() {
                   </div>
 
                   {/* Frequency */}
-                  <div className="mb-6">
-                    <label className="block text-sm font-medium text-gray-700 mb-3">
+                  <div className="mb-4 sm:mb-6">
+                    <label className="block text-sm font-medium text-gray-700 mb-2 sm:mb-3">
                       Service Frequency
                     </label>
-                    <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                    <div className="grid grid-cols-2 md:grid-cols-4 gap-2 sm:gap-3">
                       {frequencies.map((freq) => (
                         <label 
                           key={freq.value} 
-                          className={`flex items-center justify-center p-3 border-2 rounded-lg cursor-pointer transition-all ${
+                          className={`flex items-center justify-center p-2 sm:p-3 border-2 rounded-lg cursor-pointer transition-all ${
                             formData.frequency === freq.value
                               ? 'border-teal-500 bg-teal-50 text-teal-700 font-semibold'
                               : 'border-gray-200 hover:border-gray-300'
@@ -474,7 +474,7 @@ function BookingContent() {
                             onChange={(e) => handleInputChange('frequency', e.target.value)}
                             className="sr-only"
                           />
-                          <span className="text-sm text-center">{freq.label}</span>
+                          <span className="text-xs sm:text-sm text-center">{freq.label}</span>
                         </label>
                       ))}
                     </div>
@@ -482,12 +482,12 @@ function BookingContent() {
                   </div>
 
                   {/* Help Box */}
-                  <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6">
-                    <div className="flex items-start gap-3">
-                      <Phone className="text-blue-600 flex-shrink-0 mt-1" size={20} />
+                  <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 sm:p-4 mb-4 sm:mb-6">
+                    <div className="flex items-start gap-2 sm:gap-3">
+                      <Phone className="text-blue-600 flex-shrink-0 mt-1" size={18} />
                       <div>
-                        <h4 className="font-semibold text-blue-900 mb-1">Need Help?</h4>
-                        <p className="text-sm text-blue-700">
+                        <h4 className="font-semibold text-blue-900 mb-1 text-sm sm:text-base">Need Help?</h4>
+                        <p className="text-xs sm:text-sm text-blue-700">
                           Contact us on WhatsApp at <a href="https://wa.me/447413069737" target="_blank" rel="noopener noreferrer" className="underline font-semibold">+44 7413 069737</a> for immediate assistance or custom requirements.
                         </p>
                       </div>
@@ -495,7 +495,7 @@ function BookingContent() {
                   </div>
 
                   <div className="flex justify-end">
-                    <button onClick={nextStep} className="btn-primary">
+                    <button onClick={nextStep} className="btn-primary w-full sm:w-auto">
                       Next Step
                       <ArrowRight size={18} />
                     </button>
@@ -506,7 +506,7 @@ function BookingContent() {
               {/* Step 2: Customer Details */}
               {currentStep === 2 && (
                 <div>
-                  <h2 className="text-2xl font-bold text-gray-900 mb-6">
+                  <h2 className="text-xl sm:text-2xl font-bold text-gray-900 mb-4 sm:mb-6">
                     Your Details
                   </h2>
                   
@@ -613,12 +613,12 @@ function BookingContent() {
                     />
                   </div>
 
-                  <div className="flex justify-between">
-                    <button onClick={prevStep} className="btn-outline">
+                  <div className="flex flex-col-reverse sm:flex-row justify-between gap-3">
+                    <button onClick={prevStep} className="btn-outline w-full sm:w-auto">
                       <ArrowLeft size={18} />
                       Previous
                     </button>
-                    <button onClick={nextStep} className="btn-primary">
+                    <button onClick={nextStep} className="btn-primary w-full sm:w-auto">
                       Next Step
                       <ArrowRight size={18} />
                     </button>
@@ -629,10 +629,10 @@ function BookingContent() {
               {/* Step 3: Payment and Confirmation */}
               {currentStep === 3 && (
                 <div>
-                  <h2 className="text-2xl font-bold text-gray-900 mb-2">
+                  <h2 className="text-xl sm:text-2xl font-bold text-gray-900 mb-2">
                     Payment Method & Confirmation
                   </h2>
-                  <p className="text-sm text-gray-600 mb-6">
+                  <p className="text-xs sm:text-sm text-gray-600 mb-4 sm:mb-6">
                     Select your preferred payment method. We&apos;ll contact you on WhatsApp to confirm your booking.
                   </p>
                   
@@ -721,30 +721,30 @@ function BookingContent() {
 
                   {/* Booking Summary */}
                   {selectedService && (
-                    <div className="bg-gray-50 rounded-lg p-6 mb-8">
-                      <h3 className="text-lg font-semibold text-gray-900 mb-4">Booking Summary</h3>
-                      <div className="space-y-3">
-                        <div className="flex justify-between">
+                    <div className="bg-gray-50 rounded-lg p-4 sm:p-6 mb-6 sm:mb-8">
+                      <h3 className="text-base sm:text-lg font-semibold text-gray-900 mb-3 sm:mb-4">Booking Summary</h3>
+                      <div className="space-y-2 sm:space-y-3">
+                        <div className="flex justify-between text-sm sm:text-base">
                           <span className="text-gray-600">Service:</span>
-                          <span className="font-medium">{selectedService.name}</span>
+                          <span className="font-medium text-right">{selectedService.name}</span>
                         </div>
-                        <div className="flex justify-between">
+                        <div className="flex justify-between text-sm sm:text-base">
                           <span className="text-gray-600">Date:</span>
                           <span className="font-medium">{new Date(formData.service_date).toLocaleDateString('en-GB')}</span>
                         </div>
-                        <div className="flex justify-between">
+                        <div className="flex justify-between text-sm sm:text-base">
                           <span className="text-gray-600">Time:</span>
                           <span className="font-medium">{formData.service_time}</span>
                         </div>
-                        <div className="flex justify-between">
+                        <div className="flex justify-between text-sm sm:text-base">
                           <span className="text-gray-600">Frequency:</span>
-                          <span className="font-medium">{frequencies.find(f => f.value === formData.frequency)?.label}</span>
+                          <span className="font-medium text-right">{frequencies.find(f => f.value === formData.frequency)?.label}</span>
                         </div>
-                        <div className="flex justify-between">
+                        <div className="flex justify-between text-sm sm:text-base">
                           <span className="text-gray-600">Address:</span>
-                          <span className="font-medium">{formData.address}, {formData.city} {formData.postcode}</span>
+                          <span className="font-medium text-right max-w-[60%]">{formData.address}, {formData.city} {formData.postcode}</span>
                         </div>
-                        <div className="border-t pt-3 flex justify-between text-lg font-semibold">
+                        <div className="border-t pt-2 sm:pt-3 flex justify-between text-base sm:text-lg font-semibold">
                           <span>Estimated Price:</span>
                           <span className="text-teal-600">From £{selectedService.price}</span>
                         </div>
@@ -752,15 +752,15 @@ function BookingContent() {
                     </div>
                   )}
 
-                  <div className="flex justify-between">
-                    <button onClick={prevStep} className="btn-outline">
+                  <div className="flex flex-col-reverse sm:flex-row justify-between gap-3">
+                    <button onClick={prevStep} className="btn-outline w-full sm:w-auto">
                       <ArrowLeft size={18} />
                       Previous
                     </button>
                     <button 
                       onClick={submitBooking} 
                       disabled={loading}
-                      className="btn-primary disabled:opacity-50"
+                      className="btn-primary disabled:opacity-50 w-full sm:w-auto"
                     >
                       {loading ? 'Submitting...' : 'Confirm Booking'}
                       <ArrowRight size={18} />
