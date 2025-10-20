@@ -211,10 +211,9 @@ function BookingContent() {
           payment_reference: reference,
           amount: totalAmount,
           deposit_amount: depositAmount,
-          balance_amount: balanceAmount,
-          requires_deposit: requiresDeposit,
-          deposit_paid: false,
-          balance_paid: false
+          balance_remaining: balanceAmount,
+          deposit_required: requiresDeposit,
+          deposit_paid: false
         }])
         .select()
       
